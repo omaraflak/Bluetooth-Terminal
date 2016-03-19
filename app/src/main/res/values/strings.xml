@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Bluetooth Terminal</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <color name="bg">#C0C0C0</color>
+
+    <string name="az_appkey">fca17028fc732614b4b814805b002285</string>
+</resources>
