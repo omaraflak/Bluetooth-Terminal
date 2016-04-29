@@ -37,6 +37,7 @@ public class Select extends Activity implements PullToRefresh.OnStartRefreshList
         registered=true;
 
         bt = new Bluetooth();
+        bt.enableBluetooth();
 
         pull_to_refresh = (PullToRefresh)findViewById(R.id.pull_to_refresh);
         listView =  (ListView)findViewById(R.id.list);
@@ -59,10 +60,7 @@ public class Select extends Activity implements PullToRefresh.OnStartRefreshList
             }
         });
 
-        if(bt.isEnabled())
-            addDevicesToList();
-        else
-            bt.enableBluetooth();
+        addDevicesToList();
     }
 
     @Override

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
@@ -19,12 +20,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.IOException;
-
-
-public class MainActivity extends AppCompatActivity implements Bluetooth.OnConnectedListener, Bluetooth.OnReceivedMessageListener {
+public class MainActivity extends AppCompatActivity implements Bluetooth.BluetoothCallback {
     private String name;
     private Bluetooth b;
     private EditText message;
@@ -47,24 +44,22 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.OnConne
         send.setEnabled(false);
 
         b = new Bluetooth();
-        if(!b.isEnabled())
-            b.enableBluetooth();
+        b.enableBluetooth();
 
-        b.setOnConnectedListener(this);
-        b.setOnReceivedMessageListener(this);
+        b.setBluetoothCallback(this);
 
         int pos = getIntent().getExtras().getInt("pos");
         name = b.getPairedDevices().get(pos).getName();
 
         Display("Connecting...");
-        b.connectByName(name);
+        b.connectToDevice(b.getPairedDevices().get(pos));
 
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String msg = message.getText().toString();
                 message.setText("");
-                b.sendMessage(msg);
+                b.send(msg);
                 Display("You: "+msg);
             }
         });
@@ -95,14 +90,11 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.OnConne
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.close:
-                try {
-                    b.disconnect();
-                    Intent intent = new Intent(this, Select.class);
-                    startActivity(intent);
-                    finish();
-                } catch (IOException e) {
-                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
+                b.removeBluetoothCallback();
+                b.disconnect();
+                Intent intent = new Intent(this, Select.class);
+                startActivity(intent);
+                finish();
                 return true;
 
             case R.id.rate:
@@ -132,8 +124,8 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.OnConne
     }
 
     @Override
-    public void OnConnected(BluetoothDevice device) {
-        Display("Connected to "+device.getName()+".");
+    public void onConnect(BluetoothDevice device) {
+        Display("Connected to "+device.getName()+" - "+device.getAddress());
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -143,42 +135,38 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.OnConne
     }
 
     @Override
-    public void ErrorConnecting(IOException e) {
-        Display("Error: "+e.getMessage());
-        Display("Trying again in 3 sec.");
-        wait(3000);
-        b.connectByName(name);
+    public void onDisconnect(BluetoothDevice device, String message) {
+        Display("Disconnected!");
+        Display("Connecting again...");
+        b.connectToDevice(device);
     }
 
     @Override
-    public void OnReceivedMessage(String message) {
+    public void onMessage(String message) {
         Display(name+": "+message);
     }
 
-    private void wait(int milli){
-        Wait w = new Wait(milli);
-        w.start();
-        try {
-            w.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    @Override
+    public void onError(String message) {
+        Display("Error: "+message);
     }
 
-    private class Wait extends Thread{
-        private int time;
-
-        public Wait(int milli){
-            time=milli;
-        }
-
-        public void run(){
-            try {
-                Thread.sleep(time);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+    @Override
+    public void onConnectError(final BluetoothDevice device, String message) {
+        Display("Error: "+message);
+        Display("Trying again in 3 sec.");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        b.connectToDevice(device);
+                    }
+                }, 2000);
             }
-        }
+        });
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
