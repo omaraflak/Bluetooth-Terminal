@@ -18,9 +18,12 @@ import java.util.UUID;
 public class Bluetooth {
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
     private BluetoothAdapter bluetoothAdapter;
-    private ConnectThread thread;
-    private boolean connected=false;
+    private BluetoothSocket socket;
+    private BluetoothDevice device;
+    private BufferedReader input;
+    private OutputStream out;
 
+    private boolean connected=false;
     private BluetoothCallback listener=null;
 
     public Bluetooth(){
@@ -45,8 +48,7 @@ public class Bluetooth {
 
     public void connectToAddress(String address) {
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
-        thread = new ConnectThread(device);
-        thread.start();
+        new ConnectThread(device).start();
     }
 
     public void connectToName(String name) {
@@ -59,13 +61,16 @@ public class Bluetooth {
     }
 
     public void connectToDevice(BluetoothDevice device){
-        thread = new ConnectThread(device);
-        thread.start();
+        new ConnectThread(device).start();
     }
 
     public void disconnect() {
-        thread.close();
-        thread.interrupt();
+        try {
+            socket.close();
+        } catch (IOException e) {
+            if(listener!=null)
+                listener.onError(e.getMessage());
+        }
     }
 
     public boolean isConnected(){
@@ -73,48 +78,36 @@ public class Bluetooth {
     }
 
     public void send(String msg){
-        thread.send(msg);
+        try {
+            out.write(msg.getBytes());
+        } catch (IOException e) {
+            connected=false;
+            if(listener!=null)
+                listener.onDisconnect(device, e.getMessage());
+        }
     }
 
-    private class ConnectThread extends Thread {
-        private BluetoothSocket socket;
-        private BluetoothDevice device;
-        BufferedReader input;
-        private OutputStream out;
-        private boolean stop=false;
-
-        public ConnectThread(BluetoothDevice device) {
-            this.device=device;
+    private class ReceiveThread extends Thread implements Runnable{
+        public void run(){
+            String msg;
             try {
-                socket = device.createRfcommSocketToServiceRecord(MY_UUID);
-            } catch (IOException e) {
-                if(listener!=null)
-                    listener.onError(e.getMessage());
-            }
-        }
-
-        public void send(String msg){
-            try{
-                out.write(msg.getBytes());
+                while ((msg = input.readLine()) != null) {
+                    if (listener != null)
+                        listener.onMessage(msg);
+                }
             } catch (IOException e) {
                 connected=false;
-                if(listener!=null)
+                if (listener != null)
                     listener.onDisconnect(device, e.getMessage());
             }
         }
+    }
 
-        public BluetoothDevice getDevice(){
-            return device;
-        }
-
-        public BluetoothSocket getSocket(){
-            return socket;
-        }
-
-        public void close(){
-            stop=true;
+    private class ConnectThread extends Thread {
+        public ConnectThread(BluetoothDevice device) {
+            Bluetooth.this.device=device;
             try {
-                socket.close();
+                Bluetooth.this.socket = device.createRfcommSocketToServiceRecord(MY_UUID);
             } catch (IOException e) {
                 if(listener!=null)
                     listener.onError(e.getMessage());
@@ -126,43 +119,23 @@ public class Bluetooth {
 
             try {
                 socket.connect();
+                out = socket.getOutputStream();
+                input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 connected=true;
 
-                input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = socket.getOutputStream();
+                new ReceiveThread().start();
 
                 if(listener!=null)
                     listener.onConnect(device);
             } catch (IOException e) {
                 if(listener!=null)
-                    listener.onConnectError(socket.getRemoteDevice(), e.getMessage());
+                    listener.onConnectError(device, e.getMessage());
 
                 try {
                     socket.close();
                 } catch (IOException closeException) {
                     if (listener != null)
                         listener.onError(closeException.getMessage());
-                }
-            }
-
-            if(connected) {
-                String msg;
-
-                try {
-                    while (!stop && input!=null && (msg = input.readLine()) != null) {
-                        if (listener != null)
-                            listener.onMessage(msg);
-                    }
-
-                    if(!stop) {
-                        if (listener != null)
-                            listener.onDisconnect(device, "null");
-
-                        socket.close();
-                    }
-                } catch (IOException e) {
-                    if (listener != null)
-                        listener.onDisconnect(device, e.getMessage());
                 }
             }
         }
@@ -177,21 +150,12 @@ public class Bluetooth {
     }
 
     public BluetoothSocket getSocket(){
-        return thread.getSocket();
+        return socket;
     }
 
     public BluetoothDevice getDevice(){
-        return thread.getDevice();
+        return device;
     }
-
-    public String getDeviceName(){
-        return thread.getDevice().getName();
-    }
-
-    public String getDeviceAddress(){
-        return thread.getDevice().getAddress();
-    }
-
 
     public interface BluetoothCallback{
         void onConnect(BluetoothDevice device);
