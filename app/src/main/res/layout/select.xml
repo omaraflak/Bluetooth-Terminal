@@ -19,12 +19,12 @@
         android:paddingLeft="10dip"
         android:paddingBottom="5dip"
         android:textColor="@color/bg"
-        android:text="You must be paired with your device to see it in the list. Use the settings app for pairing.\nPull to refresh the list."
+        android:text="You must be paired with your device to see it in the list. Pull to refresh the list."
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/text"/>
 
-    <me.aflak.bluetoothterminal.PullToRefresh
+    <me.aflak.pulltorefresh.PullToRefresh
         android:id="@+id/pull_to_refresh"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -36,6 +36,14 @@
             android:layout_height="wrap_content">
         </ListView>
 
-    </me.aflak.bluetoothterminal.PullToRefresh>
+    </me.aflak.pulltorefresh.PullToRefresh>
+
+    <Button
+        android:id="@+id/not_in_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Device not found!"
+        android:layout_below="@+id/pull_to_refresh"
+        android:layout_alignParentStart="true" />
 
 </RelativeLayout>

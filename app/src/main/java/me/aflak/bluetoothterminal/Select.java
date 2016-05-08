@@ -11,18 +11,23 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import me.aflak.bluetooth.Bluetooth;
+import me.aflak.pulltorefresh.PullToRefresh;
+
 /**
  * Created by Omar on 16/07/2015.
  */
-public class Select extends Activity implements PullToRefresh.OnStartRefreshListener {
+public class Select extends Activity implements PullToRefresh.OnRefreshListener {
     private Bluetooth bt;
     private ListView listView;
+    private Button not_found;
     private List<BluetoothDevice> paired;
     private PullToRefresh pull_to_refresh;
     private boolean registered=false;
@@ -36,15 +41,16 @@ public class Select extends Activity implements PullToRefresh.OnStartRefreshList
         registerReceiver(mReceiver, filter);
         registered=true;
 
-        bt = new Bluetooth();
+        bt = new Bluetooth(this);
         bt.enableBluetooth();
 
         pull_to_refresh = (PullToRefresh)findViewById(R.id.pull_to_refresh);
         listView =  (ListView)findViewById(R.id.list);
+        not_found =  (Button) findViewById(R.id.not_in_list);
 
         pull_to_refresh.setListView(listView);
-        pull_to_refresh.setOnStartRefreshListener(this);
-        pull_to_refresh.setSlideLenght(500);
+        pull_to_refresh.setOnRefreshListener(this);
+        pull_to_refresh.setSlide(500);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -60,11 +66,19 @@ public class Select extends Activity implements PullToRefresh.OnStartRefreshList
             }
         });
 
+        not_found.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Select.this, Scan.class);
+                startActivity(i);
+            }
+        });
+
         addDevicesToList();
     }
 
     @Override
-    public void OnStartRefresh() {
+    public void onRefresh() {
         List<String> names = new ArrayList<String>();
         for (BluetoothDevice d : bt.getPairedDevices()){
             names.add(d.getName());
@@ -81,7 +95,7 @@ public class Select extends Activity implements PullToRefresh.OnStartRefreshList
                 paired = bt.getPairedDevices();
             }
         });
-        pull_to_refresh.refreshComplete(this);
+        pull_to_refresh.refreshComplete();
     }
 
     @Override
@@ -106,6 +120,8 @@ public class Select extends Activity implements PullToRefresh.OnStartRefreshList
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1, array);
 
         listView.setAdapter(adapter);
+
+        not_found.setEnabled(true);
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ProgressBar
+        android:id="@+id/scan_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="15dip"
+        android:indeterminate="true"/>
+
+    <TextView
+        android:id="@+id/scan_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@+id/scan_progress"
+        android:padding="15dip"
+        android:textSize="18sp"
+        android:gravity="center_vertical"
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/scan_list" />
+
+    <ListView
+        android:id="@+id/scan_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/scan_progress"
+        android:layout_above="@+id/scan_scan_again" />
+
+    <Button
+        android:id="@+id/scan_scan_again"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scan again"
+        android:layout_alignParentBottom="true"
+        android:layout_alignEnd="@+id/scan_state" />
+
+</RelativeLayout>

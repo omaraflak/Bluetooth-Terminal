@@ -21,7 +21,9 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity implements Bluetooth.BluetoothCallback {
+import me.aflak.bluetooth.Bluetooth;
+
+public class MainActivity extends AppCompatActivity implements Bluetooth.CommunicationCallback {
     private String name;
     private Bluetooth b;
     private EditText message;
@@ -43,10 +45,10 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.Bluetoo
         text.setMovementMethod(new ScrollingMovementMethod());
         send.setEnabled(false);
 
-        b = new Bluetooth();
+        b = new Bluetooth(this);
         b.enableBluetooth();
 
-        b.setBluetoothCallback(this);
+        b.setCommunicationCallback(this);
 
         int pos = getIntent().getExtras().getInt("pos");
         name = b.getPairedDevices().get(pos).getName();
@@ -90,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.Bluetoo
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.close:
-                b.removeBluetoothCallback();
+                b.removeCommunicationCallback();
                 b.disconnect();
                 Intent intent = new Intent(this, Select.class);
                 startActivity(intent);
