@@ -23,7 +23,7 @@ import android.widget.TextView;
 
 import me.aflak.bluetooth.Bluetooth;
 
-public class MainActivity extends AppCompatActivity implements Bluetooth.CommunicationCallback {
+public class Chat extends AppCompatActivity implements Bluetooth.CommunicationCallback {
     private String name;
     private Bluetooth b;
     private EditText message;
@@ -178,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements Bluetooth.Communi
 
             if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-                Intent intent1 = new Intent(MainActivity.this, Select.class);
+                Intent intent1 = new Intent(Chat.this, Select.class);
 
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
